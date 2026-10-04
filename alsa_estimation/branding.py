@@ -1,9 +1,10 @@
-"""The web app manifest and the app icons, built from the default company's logo (Company > Company Logo).
+"""The web app manifest and the app icons, built from Website Settings > App Logo (a square logo),
+or else the default company's logo (Company > Company Logo).
 
 Served from the site root so the installed app can use them:
   /alsa-estimation-manifest.json
   /alsa-estimation-icon-192.png and /alsa-estimation-icon-512.png (the logo on white, inside the maskable safe zone)
-Without a company logo, the icon is a plain sheet drawn in the app's colors."""
+Without either, the icon is a plain sheet drawn in the app's colors."""
 
 import io
 import json
@@ -24,6 +25,11 @@ def company_logo():
 	company = frappe.defaults.get_global_default("company")
 	logo = frappe.db.get_value("Company", company, "company_logo") if company else None
 	return logo or frappe.db.get_value("Company", {"company_logo": ["is", "set"]}, "company_logo")
+
+
+def app_logo():
+	"""Website Settings > App Logo is Frappe's place for the app's square logo; a wide company logo is the fallback."""
+	return frappe.db.get_single_value("Website Settings", "app_logo") or company_logo()
 
 
 def manifest():
@@ -55,7 +61,7 @@ def _png(image):
 def _logo():
 	from PIL import Image
 
-	url = company_logo()
+	url = app_logo()
 	if not url:
 		return None
 	try:
@@ -91,7 +97,7 @@ def _icon(size):
 
 def _cached(key, build):
 	"""Cached per logo, so a new logo shows without a deploy."""
-	cache_key = f"alsa_estimation_brand:{key}:{company_logo() or '-'}"
+	cache_key = f"alsa_estimation_brand:{key}:{app_logo() or '-'}"
 	data = frappe.cache.get_value(cache_key)
 	if data is None:
 		data = build()
