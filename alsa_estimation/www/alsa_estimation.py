@@ -1,6 +1,6 @@
 import frappe
 from frappe import _
-from frappe.utils import get_fullname
+from frappe.utils import cint, get_fullname
 
 from alsa_estimation import APP_ROUTE, APP_TITLE
 
@@ -24,6 +24,10 @@ def get_context(context):
 		"title": APP_TITLE,
 		"user": frappe.session.user,
 		"full_name": get_fullname(frappe.session.user),
+		"push": bool(frappe.conf.get("push_relay_server_url"))
+		and bool(
+			cint(frappe.db.get_single_value("Push Notification Settings", "enable_push_notification_relay"))
+		),
 	}
 	context.boot = frappe.as_json(boot, indent=None).replace("</", "<\\/")
 	context.title = APP_TITLE

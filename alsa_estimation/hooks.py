@@ -274,3 +274,6 @@ website_route_rules = [
 
 # The installable app: service worker, manifest and icons, served from the site root
 page_renderer = ["alsa_estimation.sw.ServiceWorkerRenderer", "alsa_estimation.branding.BrandingRenderer"]
+
+# Alerts about estimations also go to the phone (push relay)
+doc_events = {"Notification Log": {"after_insert": "alsa_estimation.notify.push_alert"}}
