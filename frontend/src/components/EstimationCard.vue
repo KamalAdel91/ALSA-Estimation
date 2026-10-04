@@ -8,13 +8,11 @@ const props = defineProps({
 	showHint: { type: Boolean, default: false },
 });
 
-// Until the estimation screen is built, a card opens the estimation on the desk.
-const href = computed(() => `/app/project-estimation/${encodeURIComponent(props.row.name)}`);
 const subtitle = computed(() => [props.row.title, props.row.project_type].filter(Boolean).join(", "));
 </script>
 
 <template>
-	<a class="est-card" :href="href">
+	<RouterLink class="est-card" :to="{ name: 'estimation', params: { name: row.name } }">
 		<div class="row-between">
 			<span class="est-customer">{{ row.customer || row.name }}</span>
 			<StateBadge :state="row.state" :tone="row.tone" />
@@ -28,5 +26,5 @@ const subtitle = computed(() => [props.row.title, props.row.project_type].filter
 			<span v-if="row.total_cost" class="est-amount">{{ amount(row.total_cost) }}</span>
 			<span v-else class="muted">Not priced yet</span>
 		</div>
-	</a>
+	</RouterLink>
 </template>
