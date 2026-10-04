@@ -3,6 +3,7 @@ import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { call } from "../api.js";
 import { amount, number } from "../format.js";
+import MarginEditor from "../components/MarginEditor.vue";
 import PriceHero from "../components/PriceHero.vue";
 import TopBar from "../components/TopBar.vue";
 
@@ -15,13 +16,15 @@ function pct(value) {
 	return total ? (Number(value) / total) * 100 : 0;
 }
 
-onMounted(async () => {
+async function load() {
 	try {
 		est.value = await call("alsa_estimation.estimation.get_estimation", { name: route.params.name });
 	} catch (e) {
 		error.value = e.message;
 	}
-});
+}
+
+onMounted(load);
 </script>
 
 <template>
@@ -33,6 +36,14 @@ onMounted(async () => {
 			<section v-if="est.price" class="summary summary-price">
 				<PriceHero :price="est.price" :currency="est.currency" />
 			</section>
+			<MarginEditor
+				v-if="est.can_edit && est.can_edit_price"
+				:key="est.modified"
+				:estimation="est.name"
+				:modified="est.modified"
+				:value="est.price.margin_percentage"
+				@saved="load"
+			/>
 			<div class="kpis">
 				<div class="kpi">
 					<span>Total cost</span>

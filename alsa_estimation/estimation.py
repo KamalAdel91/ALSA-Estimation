@@ -8,7 +8,7 @@ from frappe.utils import cint, flt, fmt_money, strip_html
 from nexlify_budget_control.nexlify_budget_control.manpower import trade_order
 from nexlify_budget_control.nexlify_budget_control.opportunity_rfq import get_rfq_for_estimation
 
-from alsa_estimation.api import DOCTYPE, _hint, _workflow_states
+from alsa_estimation.api import DOCTYPE, _can_edit, _hint, _workflow_states
 
 # Same palette and order rule as manpower_order.js on the desk.
 TRADE_COLORS = ["#2490EF", "#20A39E", "#F59E0B", "#8B5CF6", "#EC4899", "#64748B"]
@@ -91,13 +91,13 @@ def get_estimation(name):
 	scope_items = frappe.db.count("Project Equipment Scope", {"cost_budget": doc.name, "docstatus": ["<", 2]})
 	margin = _("Margin {0}%").format(_num(price["margin_percentage"])) if price else None
 	sections = [
-		{"key": "rfq", "label": _("RFQ"), "text": _("{0} items").format(rfq_items)}
+		{"key": "rfq", "label": _("RFQ"), "text": _plural(rfq_items, _("{0} item"), _("{0} items"))}
 		if doc.opportunity
 		else None,
 		{
 			"key": "scope",
 			"label": _("Equipment scope"),
-			"text": _("{0} equipment, {1} team days").format(scope_items, _num(days)),
+			"text": _("{0} equipment, {1}").format(scope_items, _plural(days, _("{0} team day"), _("{0} team days"))),
 		},
 		{"key": "rates", "label": _("Team daily rates"), "amount": doc.manpower_cost},
 		{"key": "accommodation", "label": _("Accommodation"), "amount": doc.accommodation_total},
@@ -114,6 +114,9 @@ def get_estimation(name):
 
 	return {
 		"name": doc.name,
+		"modified": doc.modified,
+		"can_edit": _can_edit(doc, state_field, states),
+		"can_edit_price": can_see_price and 1 in frappe.get_meta(DOCTYPE).get_permlevel_access("write"),
 		"customer": frappe.db.get_value("Customer", doc.customer, "customer_name") or doc.customer,
 		"title": opportunity.custom_opportunity_name or "",
 		"project_type": opportunity.custom_project_type or "",
@@ -154,7 +157,13 @@ def get_section(name, section):
 	if not builder:
 		frappe.throw(_("Unknown section: {0}").format(section))
 	doc = _read(name)
-	return {"name": doc.name, **builder(doc, _trade_colors(), _can_see_price())}
+	state_field, states = _workflow_states()
+	return {
+		"name": doc.name,
+		"modified": doc.modified,
+		"can_edit": _can_edit(doc, state_field, states),
+		**builder(doc, _trade_colors(), _can_see_price()),
+	}
 
 
 def _section_scope(doc, colors, can_see_price):
@@ -190,13 +199,21 @@ def _section_scope(doc, colors, can_see_price):
 		crew = sorted(roles.get(s.name, []), key=lambda r: _trade_rank(colors, r.trade))
 		rows.append(
 			{
+				"key": s.name,
 				"title": s.equipment,
-				"subtitle": _("Qty {0}, {1} days each").format(_num(s.quantity), _num(s.days_per_equipment)),
-				"aside": _("{0} days").format(_num(s.total_days)),
+				"subtitle": _("Qty {0}, {1} each").format(
+					_num(s.quantity), _plural(s.days_per_equipment, _("{0} day"), _("{0} days"))
+				),
+				"aside": _plural(s.total_days, _("{0} day"), _("{0} days")),
 				"chips": [
 					{"text": r.trade, "count": cint(r.count), "dot": _color(colors, r.trade)} for r in crew
 				],
 				"figures": figures,
+				"edit": {
+					"quantity": flt(s.quantity),
+					"days_per_equipment": flt(s.days_per_equipment),
+					"roles": [{"trade": r.trade, "count": cint(r.count)} for r in crew],
+				},
 			}
 		)
 	return {
@@ -228,6 +245,13 @@ def _section_rates(doc, colors, can_see_price):
 	return {
 		"title": _("Team daily rates"),
 		"facts": [{"label": _("Working days per month"), "value": _num(doc.working_days_per_month)}],
+		"edit": {
+			"working_days_per_month": cint(doc.working_days_per_month),
+			"rows": [
+				{"designation": r.designation, "basic_salary": flt(r.basic_salary), "factor": flt(r.factor)}
+				for r in sorted(doc.team_rates or [], key=lambda r: _trade_rank(colors, r.designation))
+			],
+		},
 		"rows": rows,
 		"totals": [_fig(_("Manpower cost"), doc.manpower_cost, tone="cost")],
 		"empty": _("The rows follow the trades in Equipment scope."),
@@ -251,7 +275,7 @@ def _section_accommodation(doc, colors, can_see_price):
 		"title": _("Accommodation"),
 		"facts": [
 			{"label": _("Basis"), "value": _(doc.accommodation_basis) if doc.accommodation_basis else ""},
-			{"label": _("Duration"), "value": _("{0} months").format(_num(doc.duration_months))},
+			{"label": _("Duration"), "value": _plural(doc.duration_months, _("{0} month"), _("{0} months"))},
 		],
 		"rows": rows,
 		"totals": [_fig(_("Accommodation total"), doc.accommodation_total, tone="cost")],
@@ -262,7 +286,7 @@ def _section_accommodation(doc, colors, can_see_price):
 def _section_test_equipment(doc, colors, can_see_price):
 	return {
 		"title": _("Test equipment"),
-		"facts": [{"label": _("Duration"), "value": _("{0} months").format(_num(doc.duration_months))}],
+		"facts": [{"label": _("Duration"), "value": _plural(doc.duration_months, _("{0} month"), _("{0} months"))}],
 		"rows": _asset_rows(doc.test_equipment, doc.duration_months),
 		"totals": [_fig(_("Test equipment total"), doc.test_equipment_total, tone="cost")],
 		"empty": _("No test equipment yet."),
@@ -272,7 +296,7 @@ def _section_test_equipment(doc, colors, can_see_price):
 def _section_transportation(doc, colors, can_see_price):
 	return {
 		"title": _("Car & fuels"),
-		"facts": [{"label": _("Duration"), "value": _("{0} months").format(_num(doc.duration_months))}],
+		"facts": [{"label": _("Duration"), "value": _plural(doc.duration_months, _("{0} month"), _("{0} months"))}],
 		"rows": _asset_rows(doc.transportation, doc.duration_months),
 		"totals": [
 			_fig(_("Fuel & maintenance"), doc.fuel_maintenance_total),
@@ -356,7 +380,7 @@ def _asset_rows(rows, months):
 				"badge": {"text": _(r.ownership), "tone": "amber" if r.ownership == "Rented" else "gray"},
 				"figures": [
 					_fig(_("Monthly"), r.monthly_cost),
-					_fig(_("Cost for {0} months").format(_num(months)), r.cost, tone="cost"),
+					_fig(_("Cost for {0}").format(_plural(months, _("{0} month"), _("{0} months"))), r.cost, tone="cost"),
 				],
 			}
 		)
@@ -395,3 +419,8 @@ def _trade_rank(colors, trade):
 
 def _color(colors, trade):
 	return colors.get(trade, TRADE_COLORS[-1])
+
+
+def _plural(value, one, many):
+	"""_("{0} day") or _("{0} days"), by the number."""
+	return (one if flt(value) == 1 else many).format(_num(value))

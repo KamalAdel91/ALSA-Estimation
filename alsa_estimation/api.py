@@ -173,3 +173,11 @@ def _hint(row, state, first_state, last_move):
 	if not row.total_work_days:
 		return _("Set days and crew"), ""
 	return "", ""
+
+
+def _can_edit(doc, state_field, states):
+	"""Like the desk form: an open estimation, write permission, and a state whose Allow Edit role the user has."""
+	if doc.docstatus != 0 or not doc.has_permission("write"):
+		return False
+	state = next((s for s in states if s["name"] == doc.get(state_field)), None)
+	return state is None or state["allow_edit"] in frappe.get_roles()
