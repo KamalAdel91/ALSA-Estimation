@@ -1,16 +1,18 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { call } from "../api.js";
+import EstimationCard from "../components/EstimationCard.vue";
 
 const boot = window.alsa_boot;
 const today = new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
 const loading = ref(true);
 const error = ref("");
-const info = ref(null);
+const home = ref({ cards: [], action: [], recent: [] });
+const rows = computed(() => (home.value.action.length ? home.value.action : home.value.recent));
 
 onMounted(async () => {
 	try {
-		info.value = await call("alsa_estimation.api.ping");
+		home.value = await call("alsa_estimation.api.get_home");
 	} catch (e) {
 		error.value = e.message;
 	} finally {
@@ -25,15 +27,25 @@ onMounted(async () => {
 		<h1>{{ boot.title }}</h1>
 	</header>
 	<main class="page-body">
-		<section class="card">
-			<p v-if="loading" class="muted">Connecting…</p>
-			<p v-else-if="error" class="error">{{ error }}</p>
-			<template v-else>
-				<span class="label">Signed in as</span>
-				<strong>{{ info.full_name }}</strong>
-				<span class="label">Estimations you can open</span>
-				<strong class="big">{{ info.estimations }}</strong>
-			</template>
-		</section>
+		<p v-if="loading" class="muted">Loading…</p>
+		<p v-else-if="error" class="error">{{ error }}</p>
+		<template v-else>
+			<div v-if="home.cards.length" class="tiles">
+				<RouterLink
+					v-for="card in home.cards"
+					:key="card.name"
+					class="tile"
+					:to="{ name: 'list', query: { card: card.name } }"
+				>
+					<span class="tile-value">{{ card.value }}</span>
+					<span class="tile-label">{{ card.label }}</span>
+				</RouterLink>
+			</div>
+			<section class="stack">
+				<h2 class="section-title">{{ home.action.length ? "Needs your action" : "Recently updated" }}</h2>
+				<EstimationCard v-for="row in rows" :key="row.name" :row="row" show-hint />
+				<p v-if="!rows.length" class="muted">No estimations yet.</p>
+			</section>
+		</template>
 	</main>
 </template>

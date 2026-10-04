@@ -1,3 +1,10 @@
+<script setup>
+import TabBar from "./components/TabBar.vue";
+</script>
+
 <template>
-	<RouterView />
+	<div class="shell">
+		<RouterView />
+	</div>
+	<TabBar />
 </template>
