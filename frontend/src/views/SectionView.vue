@@ -3,20 +3,41 @@ import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { call } from "../api.js";
 import { figure } from "../format.js";
+import AccommodationEditor from "../components/AccommodationEditor.vue";
+import AssetsEditor from "../components/AssetsEditor.vue";
+import OtherCostsEditor from "../components/OtherCostsEditor.vue";
 import RatesEditor from "../components/RatesEditor.vue";
 import ScopeEditor from "../components/ScopeEditor.vue";
+import ThresholdsEditor from "../components/ThresholdsEditor.vue";
 import TopBar from "../components/TopBar.vue";
+
+// Sections edited as one form; the equipment scope is edited one equipment at a time.
+const EDITORS = {
+	rates: { component: RatesEditor, label: "Edit rates" },
+	accommodation: { component: AccommodationEditor, label: "Edit accommodation" },
+	test_equipment: { component: AssetsEditor, label: "Edit test equipment" },
+	transportation: { component: AssetsEditor, label: "Edit cars and fuel" },
+	other_costs: { component: OtherCostsEditor, label: "Edit other costs" },
+	budget: { component: ThresholdsEditor, label: "Edit warning levels" },
+};
 
 const route = useRoute();
 const section = route.params.section;
+const editor = EDITORS[section];
 const data = ref(null);
 const error = ref("");
 const trades = ref([]);
 const editingRow = ref(null);
-const editingRates = ref(false);
+const editing = ref(false);
 
 const canEdit = computed(() => Boolean(data.value && data.value.can_edit));
 const dots = computed(() => Object.fromEntries((data.value ? data.value.rows : []).map((r) => [r.title, r.dot])));
+const editorProps = computed(() => {
+	const props = { estimation: data.value.name, modified: data.value.modified, edit: data.value.edit };
+	if (section === "rates" || section === "accommodation") props.dots = dots.value;
+	if (section === "test_equipment" || section === "transportation") props.section = section;
+	return props;
+});
 
 async function load() {
 	error.value = "";
@@ -38,7 +59,7 @@ async function editScope(row) {
 
 async function saved() {
 	editingRow.value = null;
-	editingRates.value = false;
+	editing.value = false;
 	await load();
 }
 
@@ -55,15 +76,7 @@ onMounted(load);
 		<p v-if="error" class="error">{{ error }}</p>
 		<p v-if="!data && !error" class="muted">Loading…</p>
 		<template v-if="data">
-			<RatesEditor
-				v-if="editingRates"
-				:estimation="data.name"
-				:modified="data.modified"
-				:edit="data.edit"
-				:dots="dots"
-				@cancel="editingRates = false"
-				@saved="saved"
-			/>
+			<component :is="editor.component" v-if="editing" v-bind="editorProps" @cancel="editing = false" @saved="saved" />
 			<template v-else>
 				<dl v-if="data.facts.length" class="card facts">
 					<div v-for="f in data.facts" :key="f.label">
@@ -71,8 +84,8 @@ onMounted(load);
 						<dd>{{ f.value }}</dd>
 					</div>
 				</dl>
-				<button v-if="canEdit && section === 'rates'" type="button" class="btn-primary" @click="editingRates = true">
-					Edit rates
+				<button v-if="canEdit && editor && data.edit" type="button" class="btn-primary" @click="editing = true">
+					{{ editor.label }}
 				</button>
 				<article v-for="(row, i) in data.rows" :key="i" class="card">
 					<div class="row-between row-top">

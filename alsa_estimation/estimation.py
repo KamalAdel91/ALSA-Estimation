@@ -13,6 +13,9 @@ from alsa_estimation.api import DOCTYPE, _can_edit, _hint, _workflow_states
 # Same palette and order rule as manpower_order.js on the desk.
 TRADE_COLORS = ["#2490EF", "#20A39E", "#F59E0B", "#8B5CF6", "#EC4899", "#64748B"]
 
+# nexlify_budget_control works out the monthly cost per person from the basic salary for these bases.
+SALARY_BASES = ("Main City", "Outside Main City")
+
 
 @frappe.whitelist(methods=["GET"])
 def get_estimation(name):
@@ -259,6 +262,7 @@ def _section_rates(doc, colors, can_see_price):
 
 
 def _section_accommodation(doc, colors, can_see_price):
+	bases = [b for b in (frappe.get_meta(DOCTYPE).get_field("accommodation_basis").options or "").split("\n") if b]
 	rows = [
 		{
 			"title": r.designation,
@@ -279,6 +283,19 @@ def _section_accommodation(doc, colors, can_see_price):
 		],
 		"rows": rows,
 		"totals": [_fig(_("Accommodation total"), doc.accommodation_total, tone="cost")],
+		"edit": {
+			"basis": doc.accommodation_basis,
+			"bases": bases,
+			"typed_bases": [b for b in bases if b not in SALARY_BASES],
+			"rows": [
+				{
+					"designation": r.designation,
+					"persons": cint(r.persons),
+					"monthly_cost_per_person": flt(r.monthly_cost_per_person),
+				}
+				for r in sorted(doc.accommodation or [], key=lambda r: _trade_rank(colors, r.designation))
+			],
+		},
 		"empty": _("The rows follow the trades in Equipment scope."),
 	}
 
@@ -289,6 +306,7 @@ def _section_test_equipment(doc, colors, can_see_price):
 		"facts": [{"label": _("Duration"), "value": _plural(doc.duration_months, _("{0} month"), _("{0} months"))}],
 		"rows": _asset_rows(doc.test_equipment, doc.duration_months),
 		"totals": [_fig(_("Test equipment total"), doc.test_equipment_total, tone="cost")],
+		"edit": {"rows": [r.description for r in doc.test_equipment or []]},
 		"empty": _("No test equipment yet."),
 	}
 
@@ -302,6 +320,10 @@ def _section_transportation(doc, colors, can_see_price):
 			_fig(_("Fuel & maintenance"), doc.fuel_maintenance_total),
 			_fig(_("Car & fuels total"), doc.transportation_total, tone="cost"),
 		],
+		"edit": {
+			"rows": [r.description for r in doc.transportation or []],
+			"fuel_maintenance_total": flt(doc.fuel_maintenance_total),
+		},
 		"empty": _("No cars yet."),
 	}
 
@@ -320,6 +342,12 @@ def _section_other_costs(doc, colors, can_see_price):
 		"facts": [],
 		"rows": rows,
 		"totals": [_fig(_("Other costs total"), doc.other_costs_table_total, tone="cost")],
+		"edit": {
+			"rows": [
+				{"description": r.description, "budget_category": r.budget_category, "cost": flt(r.cost)}
+				for r in doc.other_costs or []
+			]
+		},
 		"empty": _("No other costs yet."),
 	}
 
@@ -349,6 +377,12 @@ def _section_budget(doc, colors, can_see_price):
 				tone="price" if not flt(doc.budget_difference) else "cost",
 			),
 		],
+		"edit": {
+			"rows": [
+				{"budget_category": r.budget_category, "warning_threshold_percentage": flt(r.warning_threshold_percentage)}
+				for r in doc.details or []
+			]
+		},
 		"empty": _("No budget rows yet."),
 	}
 

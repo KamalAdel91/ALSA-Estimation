@@ -1083,3 +1083,82 @@ p {
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 10px;
 }
+
+/* Step 5: editing the other sections */
+.fieldset {
+	margin: 0;
+	min-width: 0;
+}
+
+.fieldset legend {
+	float: left;
+	width: 100%;
+	padding: 0;
+}
+
+.segmented {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 4px;
+	padding: 4px;
+	border-radius: 12px;
+	background: var(--ground);
+}
+
+.segment {
+	min-height: 44px;
+	padding: 4px 6px;
+	border: 1px solid transparent;
+	border-radius: 9px;
+	background: transparent;
+	color: #3f4a5a;
+	font: inherit;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.2;
+}
+
+.segment.is-on {
+	border-color: var(--field);
+	background: var(--surface);
+	color: var(--ink);
+	font-weight: 700;
+}
+
+.readonly-value {
+	display: flex;
+	align-items: center;
+	min-height: 44px;
+	font-weight: 700;
+}
+
+.edit-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	padding: 4px 0;
+	border-bottom: 1px solid var(--line-soft);
+}
+
+.edit-row-title {
+	flex: 1;
+	min-width: 0;
+	font-weight: 600;
+}
+
+.input-mid {
+	width: 132px;
+	text-align: right;
+}
+
+.btn-dashed {
+	min-height: 48px;
+	border: 1px dashed #aeb6c2;
+	border-radius: 12px;
+	background: var(--surface);
+	color: var(--ink);
+	font: inherit;
+	font-size: 15px;
+	font-weight: 700;
+}
