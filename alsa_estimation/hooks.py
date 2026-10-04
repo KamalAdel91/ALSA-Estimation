@@ -271,3 +271,6 @@ website_route_rules = [
 	{"from_route": f"/{APP_ROUTE}", "to_route": "alsa_estimation"},
 	{"from_route": f"/{APP_ROUTE}/<path:app_path>", "to_route": "alsa_estimation"},
 ]
+
+# The installable app: service worker, manifest and icons, served from the site root
+page_renderer = ["alsa_estimation.sw.ServiceWorkerRenderer", "alsa_estimation.branding.BrandingRenderer"]
