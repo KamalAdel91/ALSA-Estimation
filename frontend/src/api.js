@@ -6,7 +6,7 @@ export class ApiError extends Error {
 	}
 }
 
-function serverMessage(data) {
+export function serverMessage(data) {
 	try {
 		if (data._server_messages) {
 			return JSON.parse(data._server_messages)

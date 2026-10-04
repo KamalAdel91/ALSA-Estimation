@@ -3,41 +3,86 @@ import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { call } from "../api.js";
 import { amount, date, number, when } from "../format.js";
+import { uploadFile } from "../upload.js";
+import ActionSheet from "../components/ActionSheet.vue";
 import PriceHero from "../components/PriceHero.vue";
 import StateBadge from "../components/StateBadge.vue";
 import TopBar from "../components/TopBar.vue";
 
 const route = useRoute();
+const name = route.params.name;
 const est = ref(null);
+const actions = ref([]);
 const error = ref("");
+const confirming = ref(null);
+const uploading = ref(false);
+const uploadError = ref("");
 
 function target(section) {
-	const name = route.params.name;
 	if (section.key === "rfq" || section.key === "cost") return { name: section.key, params: { name } };
 	return { name: "section", params: { name, section: section.key } };
 }
 
-onMounted(async () => {
+function buttonClass(action, i) {
+	if (action.tone === "red") return "btn-danger";
+	return i === 0 ? "btn-primary" : "btn-secondary";
+}
+
+async function load() {
+	error.value = "";
 	try {
-		est.value = await call("alsa_estimation.estimation.get_estimation", { name: route.params.name });
+		const [estimation, available] = await Promise.all([
+			call("alsa_estimation.estimation.get_estimation", { name }),
+			call("alsa_estimation.actions.get_actions", { name }),
+		]);
+		est.value = estimation;
+		actions.value = available;
 	} catch (e) {
 		error.value = e.message;
 	}
-});
+}
+
+async function attach(event) {
+	const file = event.target.files && event.target.files[0];
+	event.target.value = "";
+	if (!file) return;
+	uploading.value = true;
+	uploadError.value = "";
+	try {
+		const uploaded = await uploadFile(file, {
+			doctype: "Project Estimation",
+			docname: name,
+			fieldname: "contract_no_prices",
+		});
+		await call(
+			"alsa_estimation.actions.attach_contract",
+			{ name, file_url: uploaded.file_url, modified: est.value.modified },
+			{ write: true },
+		);
+		await load();
+	} catch (e) {
+		uploadError.value = e.message;
+	} finally {
+		uploading.value = false;
+	}
+}
+
+async function done() {
+	confirming.value = null;
+	await load();
+}
+
+onMounted(load);
 </script>
 
 <template>
-	<TopBar
-		:title="route.params.name"
-		:subtitle="est && est.opportunity ? `Opportunity ${est.opportunity}` : ''"
-		:back="{ name: 'list' }"
-	>
+	<TopBar :title="name" :subtitle="est && est.opportunity ? `Opportunity ${est.opportunity}` : ''" :back="{ name: 'list' }">
 		<StateBadge v-if="est" :state="est.state" :tone="est.tone" />
 	</TopBar>
 	<main class="page-body">
 		<p v-if="error" class="error">{{ error }}</p>
-		<p v-else-if="!est" class="muted">Loading…</p>
-		<template v-else>
+		<p v-if="!est && !error" class="muted">Loading…</p>
+		<template v-if="est">
 			<section class="card">
 				<div>
 					<h2 class="est-title">{{ est.customer }}</h2>
@@ -68,11 +113,7 @@ onMounted(async () => {
 			</section>
 			<p v-else-if="est.hint" class="banner">{{ est.hint }}</p>
 
-			<RouterLink
-				:to="{ name: 'cost', params: { name: est.name } }"
-				class="summary"
-				:class="{ 'summary-price': est.price }"
-			>
+			<RouterLink :to="{ name: 'cost', params: { name } }" class="summary" :class="{ 'summary-price': est.price }">
 				<PriceHero v-if="est.price" :price="est.price" :currency="est.currency" />
 				<div class="summary-kpis">
 					<div>
@@ -129,7 +170,39 @@ onMounted(async () => {
 						<span v-else class="muted">Needed before Handover to Planning</span>
 					</div>
 				</div>
+				<div v-if="est.can_edit" class="upload-buttons">
+					<label class="btn-secondary btn-small upload-btn">
+						<input class="sr-only" type="file" accept="image/*" capture="environment" :disabled="uploading" @change="attach" />
+						Take photo
+					</label>
+					<label class="btn-secondary btn-small upload-btn">
+						<input class="sr-only" type="file" accept="image/*,application/pdf" :disabled="uploading" @change="attach" />
+						{{ est.attachments.contract_no_prices ? "Replace file" : "Choose file" }}
+					</label>
+				</div>
+				<p v-if="uploading" class="muted">Uploading the Contract (No Prices)…</p>
+				<p v-if="uploadError" class="error">{{ uploadError }}</p>
 			</section>
 		</template>
 	</main>
+	<div v-if="est && actions.length" class="action-bar">
+		<button
+			v-for="(a, i) in actions"
+			:key="a.action"
+			type="button"
+			:class="buttonClass(a, i)"
+			@click="confirming = a"
+		>
+			{{ a.action }}
+		</button>
+	</div>
+	<ActionSheet
+		v-if="confirming"
+		:estimation="name"
+		:modified="est.modified"
+		:action="confirming"
+		:state="est.state"
+		@close="confirming = null"
+		@done="done"
+	/>
 </template>
