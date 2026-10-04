@@ -262,3 +262,12 @@ app_license = "mit"
 # List of apps whose translatable strings should be excluded from this app's translations.
 # ignore_translatable_strings_from = []
 
+# ALSA Estimation: reads Project Estimation from nexlify_budget_control, served at /ALSA.Estimation
+from alsa_estimation import APP_ROUTE
+
+required_apps = ["nexlify_budget_control"]
+
+website_route_rules = [
+	{"from_route": f"/{APP_ROUTE}", "to_route": "alsa_estimation"},
+	{"from_route": f"/{APP_ROUTE}/<path:app_path>", "to_route": "alsa_estimation"},
+]
