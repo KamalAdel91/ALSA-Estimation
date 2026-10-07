@@ -6,7 +6,7 @@ Then change or switch off the rules from the Notification list; this helper neve
 
 import frappe
 
-TEAM = [{"receiver_by_role": "Estimation User"}, {"receiver_by_role": "Estimation Manager"}]
+TEAM = [{"receiver_by_role": "Estimation Manager"}]
 
 RULES = [
 	{
