@@ -47,6 +47,7 @@ def get_supply(name):
 				"supplier_quotation": r.supplier_quotation,
 				"supply_request": r.supply_request,
 				"qty_editable": live and not waiting,
+				"description_editable": live,
 				"rate_editable": live and r.price_source == MANUAL,
 				"actions": _actions(r, status, editable),
 			}
@@ -95,7 +96,7 @@ def search_items(txt=""):
 
 
 @frappe.whitelist(methods=["POST"])
-def add_supply_line(name, item_code, qty, price_source, rate=0, modified=None):
+def add_supply_line(name, item_code, qty, price_source, rate=0, description=None, modified=None):
 	est = _editable(name, modified)
 	if price_source not in (SUPPLY_CHAIN, MANUAL):
 		frappe.throw(_("Pick where the price comes from."))
@@ -108,7 +109,7 @@ def add_supply_line(name, item_code, qty, price_source, rate=0, modified=None):
 		"supply",
 		{
 			"item_code": item_code,
-			"description": item.item_name,
+			"description": (description or "").strip()[:140] or item.item_name,
 			"qty": flt(qty),
 			"uom": item.stock_uom,
 			"price_source": price_source,
@@ -120,7 +121,7 @@ def add_supply_line(name, item_code, qty, price_source, rate=0, modified=None):
 
 
 @frappe.whitelist(methods=["POST"])
-def update_supply_line(name, row, qty=None, rate=None, modified=None):
+def update_supply_line(name, row, qty=None, rate=None, description=None, modified=None):
 	"""A new quantity on a Supply Chain line clears its price on save, as on the desk."""
 	est = _editable(name, modified)
 	line = _line(est, row)
@@ -134,6 +135,8 @@ def update_supply_line(name, row, qty=None, rate=None, modified=None):
 		if line.price_source != MANUAL:
 			frappe.throw(_("Supply Chain sets the rate of this line."))
 		line.rate = flt(rate)
+	if description is not None:
+		line.description = description.strip()[:140] or line.item_code
 	est.save()
 	return {"modified": est.modified}
 

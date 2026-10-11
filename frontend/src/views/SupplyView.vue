@@ -22,12 +22,12 @@ const busy = ref(false);
 const sheetError = ref("");
 const confirmSend = ref(false);
 const line = ref(null);
-const edit = ref({ qty: 0, rate: 0 });
+const edit = ref({ qty: 0, rate: 0, description: "" });
 const adding = ref(false);
 const search = ref("");
 const results = ref([]);
 const picked = ref(null);
-const draft = ref({ qty: 1, price_source: "Supply Chain", rate: 0 });
+const draft = ref({ qty: 1, price_source: "Supply Chain", rate: 0, description: "" });
 let timer;
 
 const counts = computed(() =>
@@ -77,7 +77,7 @@ async function sendAll() {
 
 function openLine(l) {
 	sheetError.value = "";
-	edit.value = { qty: l.qty, rate: l.rate };
+	edit.value = { qty: l.qty, rate: l.rate, description: l.description || "" };
 	line.value = l;
 }
 
@@ -86,7 +86,8 @@ async function saveLine() {
 	const args = { name, row: l.name, modified: data.value.modified };
 	if (l.qty_editable && edit.value.qty !== l.qty) args.qty = edit.value.qty;
 	if (l.rate_editable && edit.value.rate !== l.rate) args.rate = edit.value.rate;
-	if (args.qty === undefined && args.rate === undefined) {
+	if (l.description_editable && edit.value.description !== (l.description || "")) args.description = edit.value.description;
+	if (args.qty === undefined && args.rate === undefined && args.description === undefined) {
 		line.value = null;
 		return;
 	}
@@ -107,7 +108,7 @@ function openAdd() {
 	sheetError.value = "";
 	picked.value = null;
 	search.value = "";
-	draft.value = { qty: 1, price_source: "Supply Chain", rate: 0 };
+	draft.value = { qty: 1, price_source: "Supply Chain", rate: 0, description: "" };
 	adding.value = true;
 	findItems();
 }
@@ -125,6 +126,11 @@ function onSearch() {
 	timer = setTimeout(findItems, 250);
 }
 
+function pick(it) {
+	picked.value = it;
+	draft.value.description = it.item_name || it.name;
+}
+
 async function addLine() {
 	const d = draft.value;
 	const args = {
@@ -132,6 +138,7 @@ async function addLine() {
 		item_code: picked.value.name,
 		qty: d.qty,
 		price_source: d.price_source,
+		description: d.description,
 		rate: d.price_source === "Manual" ? d.rate : 0,
 		modified: data.value.modified,
 	};
@@ -218,6 +225,10 @@ onMounted(load);
 	</Sheet>
 
 	<Sheet v-if="line" :title="line.description || line.item_code" :subtitle="`${line.item_code}, ${line.status}`" @close="line = null">
+		<div v-if="line.description_editable" class="field">
+			<label class="label" for="supply-desc">Description</label>
+			<input id="supply-desc" v-model="edit.description" class="input" type="text" maxlength="140" />
+		</div>
 		<div v-if="line.qty_editable" class="field">
 			<span class="label">Quantity{{ line.uom ? ` (${line.uom})` : "" }}</span>
 			<Stepper v-model="edit.qty" label="quantity" :min="0" />
@@ -272,7 +283,7 @@ onMounted(load);
 			<button
 				type="button"
 				class="btn-primary"
-				:disabled="busy || (!line.qty_editable && !line.rate_editable)"
+				:disabled="busy || (!line.qty_editable && !line.rate_editable && !line.description_editable)"
 				@click="saveLine"
 			>
 				{{ busy ? "Saving…" : "Save" }}
@@ -296,7 +307,7 @@ onMounted(load);
 				<input v-model="search" type="search" placeholder="Item code or name" @input="onSearch" />
 			</label>
 			<div class="list-card">
-				<button v-for="it in results" :key="it.name" type="button" class="list-row pick-row" @click="picked = it">
+				<button v-for="it in results" :key="it.name" type="button" class="list-row pick-row" @click="pick(it)">
 					<span class="list-main">
 						<span class="list-title">{{ it.item_name || it.name }}</span>
 						<span class="muted">{{ it.name }}</span>
@@ -307,6 +318,10 @@ onMounted(load);
 			</div>
 		</template>
 		<template v-else>
+			<div class="field">
+				<label class="label" for="add-desc">Description</label>
+				<input id="add-desc" v-model="draft.description" class="input" type="text" maxlength="140" />
+			</div>
 			<div class="field">
 				<span class="label">Quantity{{ picked.stock_uom ? ` (${picked.stock_uom})` : "" }}</span>
 				<Stepper v-model="draft.qty" label="quantity" :min="0" />
