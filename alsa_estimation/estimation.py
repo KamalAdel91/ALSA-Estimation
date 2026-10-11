@@ -7,6 +7,7 @@ from frappe import _
 from frappe.utils import cint, flt, fmt_money, strip_html
 from nexlify_budget_control.nexlify_budget_control.manpower import trade_order
 from nexlify_budget_control.nexlify_budget_control.opportunity_rfq import get_rfq_for_estimation
+from nexlify_budget_control.nexlify_budget_control.supply_chain import MANUAL
 
 from alsa_estimation.api import DOCTYPE, _can_edit, _hint, _workflow_states
 
@@ -86,6 +87,15 @@ def get_estimation(name):
 		*({"label": k, "amount": v} for k, v in by_category.items()),
 	]
 
+	# Supply shows in the breakdown only when other_cost_total really includes it.
+	supply_total = flt(doc.get("supply_total"))
+	parts = sum(
+		flt(x)
+		for x in (doc.accommodation_total, doc.test_equipment_total, doc.transportation_total, doc.other_costs_table_total)
+	)
+	if supply_total and abs(flt(doc.other_cost_total) - parts - supply_total) < 0.01:
+		breakdown.append({"label": _("Supply"), "amount": supply_total})
+
 	rfq_items = 0
 	if doc.opportunity:
 		rfq_items = frappe.db.count(
@@ -107,7 +117,12 @@ def get_estimation(name):
 		{"key": "test_equipment", "label": _("Test equipment"), "amount": doc.test_equipment_total},
 		{"key": "transportation", "label": _("Car & fuels"), "amount": doc.transportation_total},
 		{"key": "other_costs", "label": _("Other costs"), "amount": doc.other_costs_table_total},
-		{"key": "supply", "label": _("Supply"), "amount": doc.get("supply_total")},
+		{
+			"key": "supply",
+			"label": _("Supply"),
+			"amount": doc.get("supply_total"),
+			"pending": len(_supply_unpriced(doc.get("supply"))),
+		},
 		{"key": "cost", "label": _("Cost & price"), "text": margin, "amount": None if margin else total_cost},
 		{
 			"key": "budget",
@@ -407,7 +422,10 @@ def _section_supply(doc, colors, can_see_price):
 		)
 	return {
 		"title": _("Supply"),
-		"facts": [{"label": _("Items"), "value": str(len([r for r in lines if not r.is_cancelled]))}],
+		"facts": [
+			{"label": _("Items"), "value": str(len([r for r in lines if not r.is_cancelled]))},
+			{"label": _("Waiting for a price"), "value": str(len(_supply_unpriced(lines)))},
+		],
 		"rows": rows,
 		"totals": [_fig(_("Total supply"), doc.get("supply_total"), tone="cost")],
 		"empty": _("No supply items yet. Add them on the desk for now."),
@@ -415,14 +433,19 @@ def _section_supply(doc, colors, can_see_price):
 
 
 def _supply_tone(status, cancelled):
-	s = (status or "").lower()
-	if cancelled or "cancel" in s or "reject" in s:
+	if cancelled:
 		return "red"
-	if any(w in s for w in ("received", "quoted", "priced", "approved", "done", "complete")):
-		return "green"
-	if any(w in s for w in ("pending", "request", "waiting", "sent")):
-		return "amber"
-	return "gray"
+	return {"Not Sent": "gray", "Waiting": "amber", "Priced": "green", "Cancelled": "red"}.get(status, "gray")
+
+
+def _supply_unpriced(lines):
+	"""Open lines with no price yet: the same test the estimation runs before it moves on."""
+	return [
+		r
+		for r in lines or []
+		if not r.is_cancelled
+		and ((r.price_source == MANUAL and flt(r.rate) <= 0) or (r.price_source != MANUAL and not r.supplier_quotation))
+	]
 
 
 SECTIONS = {

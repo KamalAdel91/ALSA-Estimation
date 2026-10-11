@@ -33,6 +33,7 @@ const steps = computed(() => {
 		if (!s) continue;
 		let done = Number(s.amount) > 0;
 		if (f.key === "rfq") done = parseInt(s.text, 10) > 0;
+		if (s.pending) done = false;
 		if (f.key === "scope") done = scopeDone;
 		if (f.key === "cost") done = Boolean(price && Number(price.total_price) > 0);
 		list.push({
@@ -55,6 +56,7 @@ function valueText(s) {
 
 function helpText(s) {
 	if (s.next) return "Start here";
+	if (s.pending) return `${s.pending} waiting for a price`;
 	if (s.waiting) return "Needs the crew first";
 	return s.help;
 }
@@ -174,7 +176,7 @@ onMounted(load);
 						v-for="(s, i) in steps"
 						:key="s.key"
 						class="step"
-						:class="{ 'is-done': s.done, 'is-next': s.next, 'is-waiting': s.waiting }"
+						:class="{ 'is-done': s.done, 'is-next': s.next, 'is-waiting': s.waiting, 'is-attention': s.pending }"
 					>
 						<RouterLink :to="stepRoute(name, s.key)" class="step-link">
 							<span class="step-mark" aria-hidden="true">

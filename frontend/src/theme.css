@@ -765,3 +765,8 @@ button:focus-visible {
 	font-size: 12.5px;
 	font-weight: 600;
 }
+
+.step.is-attention .step-help {
+	color: var(--amber-ink);
+	font-weight: 600;
+}
