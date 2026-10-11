@@ -47,7 +47,14 @@ onMounted(async () => {
 <template>
 	<section v-for="(r, i) in rows" :key="i" class="card">
 		<div class="field">
-			<label class="label" :for="`oc-desc-${i}`">Description</label>
+			<div class="row-between">
+				<label class="label" :for="`oc-desc-${i}`">Description</label>
+				<button type="button" class="icon-btn icon-btn-danger" :aria-label="`Remove ${r.description || 'this cost'}`" @click="rows.splice(i, 1)">
+					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13" />
+					</svg>
+				</button>
+			</div>
 			<input :id="`oc-desc-${i}`" v-model="r.description" class="input" type="text" />
 		</div>
 		<div class="field-grid">
@@ -63,8 +70,8 @@ onMounted(async () => {
 				<input :id="`oc-cost-${i}`" v-model.number="r.cost" class="input" type="number" inputmode="decimal" min="0" step="0.01" />
 			</div>
 		</div>
-		<button type="button" class="btn-secondary btn-small" @click="rows.splice(i, 1)">Remove</button>
 	</section>
+	<p v-if="!rows.length" class="muted">No other costs. Add one below.</p>
 	<button type="button" class="btn-dashed" @click="add">Add a cost</button>
 	<p v-if="error" class="error">{{ error }}</p>
 	<div class="actions">

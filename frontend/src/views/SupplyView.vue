@@ -28,7 +28,9 @@ const search = ref("");
 const results = ref([]);
 const picked = ref(null);
 const draft = ref({ qty: 1, price_source: "Supply Chain", rate: 0, description: "" });
+const confirmRow = ref("");
 let timer;
+let confirmTimer;
 
 const counts = computed(() =>
 	data.value ? ORDER.filter((k) => data.value.counts[k]).map((k) => ({ label: k, n: data.value.counts[k] })) : [],
@@ -36,6 +38,9 @@ const counts = computed(() =>
 const waiting = computed(() => (data.value ? data.value.counts.Waiting || 0 : 0));
 const qtyClearsPrice = computed(
 	() => line.value && line.value.price_source !== "Manual" && line.value.status === "Priced" && edit.value.qty !== line.value.qty,
+);
+const canSave = computed(
+	() => line.value && (line.value.qty_editable || line.value.rate_editable || line.value.description_editable),
 );
 
 function items(n) {
@@ -94,14 +99,33 @@ async function saveLine() {
 	if (await run(() => call("alsa_estimation.supply.update_supply_line", args, { write: true }))) line.value = null;
 }
 
+function actionCall(l, a) {
+	if (a.action === "send_line") return () => call(`${SC}send_to_supply_chain`, { estimation: name, rows: [l.name] }, { write: true });
+	if (a.action === "remove")
+		return () => call("alsa_estimation.supply.remove_supply_line", { name, row: l.name, modified: data.value.modified }, { write: true });
+	return () => call(`${SC}supply_line_action`, { estimation: name, row: l.name, action: a.action }, { write: true });
+}
+
 async function lineAction(a) {
-	const l = line.value;
-	let fn;
-	if (a.action === "send_line") fn = () => call(`${SC}send_to_supply_chain`, { estimation: name, rows: [l.name] }, { write: true });
-	else if (a.action === "remove")
-		fn = () => call("alsa_estimation.supply.remove_supply_line", { name, row: l.name, modified: data.value.modified }, { write: true });
-	else fn = () => call(`${SC}supply_line_action`, { estimation: name, row: l.name, action: a.action }, { write: true });
-	if (await run(fn)) line.value = null;
+	if (await run(actionCall(line.value, a))) line.value = null;
+}
+
+// The trash on a card: remove a line that never went out, otherwise cancel it. A second tap confirms.
+function quickAction(l) {
+	return l.actions.find((a) => a.action === "remove") || l.actions.find((a) => a.action === "cancel") || null;
+}
+
+async function quick(l) {
+	const a = quickAction(l);
+	if (!a) return;
+	if (confirmRow.value !== l.name) {
+		confirmRow.value = l.name;
+		clearTimeout(confirmTimer);
+		confirmTimer = setTimeout(() => (confirmRow.value = ""), 3000);
+		return;
+	}
+	confirmRow.value = "";
+	if (!(await run(actionCall(l, a)))) openLine(l);
 }
 
 function openAdd() {
@@ -176,20 +200,38 @@ onMounted(load);
 			</section>
 			<p v-if="data.locked_reason" class="muted">{{ data.locked_reason }}</p>
 
-			<button
+			<article
 				v-for="l in data.lines"
 				:key="l.name"
-				type="button"
 				class="card supply-line"
 				:class="{ 'is-cancelled': l.status === 'Cancelled' }"
+				role="button"
+				tabindex="0"
 				@click="openLine(l)"
+				@keydown.enter="openLine(l)"
 			>
 				<div class="row-between row-top">
-					<div>
+					<div class="supply-head">
 						<h2 class="row-title">{{ l.description || l.item_code }}</h2>
 						<span class="muted">{{ l.item_code }}, {{ number(l.qty) }} {{ l.uom || "" }}</span>
 					</div>
-					<span class="badge" :class="`tone-${TONES[l.status] || 'gray'}`">{{ l.status }}</span>
+					<div class="supply-side">
+						<span class="badge" :class="`tone-${TONES[l.status] || 'gray'}`">{{ l.status }}</span>
+						<button
+							v-if="quickAction(l)"
+							type="button"
+							class="icon-btn quick-btn"
+							:class="{ 'is-confirm': confirmRow === l.name }"
+							:aria-label="quickAction(l).action === 'remove' ? `Remove ${l.item_code}` : `Cancel ${l.item_code}`"
+							:disabled="busy"
+							@click.stop="quick(l)"
+						>
+							<span v-if="confirmRow === l.name">{{ quickAction(l).action === "remove" ? "Remove?" : "Cancel?" }}</span>
+							<svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+								<path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13" />
+							</svg>
+						</button>
+					</div>
 				</div>
 				<div class="figures">
 					<div class="figure">
@@ -205,7 +247,7 @@ onMounted(load);
 						<strong>{{ l.supplier }}</strong>
 					</div>
 				</div>
-			</button>
+			</article>
 			<p v-if="!data.lines.length" class="muted">No supply items yet.</p>
 			<button v-if="data.editable" type="button" class="btn-dashed" @click="openAdd">Add an item</button>
 			<StepPager :estimation="name" current="supply" />
@@ -280,12 +322,7 @@ onMounted(load);
 		<p v-if="sheetError" class="error">{{ sheetError }}</p>
 		<template #footer>
 			<button type="button" class="btn-secondary" @click="line = null">Close</button>
-			<button
-				type="button"
-				class="btn-primary"
-				:disabled="busy || (!line.qty_editable && !line.rate_editable && !line.description_editable)"
-				@click="saveLine"
-			>
+			<button type="button" class="btn-primary" :disabled="busy || !canSave" @click="saveLine">
 				{{ busy ? "Saving…" : "Save" }}
 			</button>
 		</template>

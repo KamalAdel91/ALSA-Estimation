@@ -821,3 +821,52 @@ button:focus-visible {
 	color: var(--margin);
 	font-weight: 600;
 }
+
+/* Sheet: the body scrolls, the buttons stay in view (dvh follows the phone keyboard) */
+.sheet {
+	max-height: 92vh;
+	max-height: 92dvh;
+}
+
+.sheet-body {
+	flex: 1 1 auto;
+	min-height: 0;
+	overscroll-behavior: contain;
+}
+
+.sheet-head,
+.sheet-foot,
+.sheet-grabber {
+	flex: none;
+}
+
+/* Remove from the list */
+.supply-head {
+	min-width: 0;
+}
+
+.supply-side {
+	display: flex;
+	flex: none;
+	align-items: center;
+	gap: 2px;
+}
+
+.quick-btn {
+	width: auto;
+	min-width: 40px;
+	height: 40px;
+	padding: 0 8px;
+	color: var(--muted);
+}
+
+.quick-btn.is-confirm {
+	background: var(--tone-red-bg);
+	color: var(--danger);
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.icon-btn-danger {
+	color: var(--danger);
+}
