@@ -870,3 +870,15 @@ button:focus-visible {
 .icon-btn-danger {
 	color: var(--danger);
 }
+
+/* Sheet content keeps its size, so the sheet body scrolls instead of clipping a list */
+.sheet-body > * {
+	flex-shrink: 0;
+}
+
+.sheet-body .search {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	background: var(--surface);
+}
