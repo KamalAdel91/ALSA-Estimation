@@ -6,6 +6,7 @@ import HomeView from "./views/HomeView.vue";
 import ListView from "./views/ListView.vue";
 import RfqView from "./views/RfqView.vue";
 import SectionView from "./views/SectionView.vue";
+import SupplyView from "./views/SupplyView.vue";
 
 export const router = createRouter({
 	history: createWebHistory(`/${window.alsa_boot.route}`),
@@ -16,6 +17,7 @@ export const router = createRouter({
 		{ path: "/estimation/:name", name: "estimation", component: EstimationView },
 		{ path: "/estimation/:name/rfq", name: "rfq", component: RfqView },
 		{ path: "/estimation/:name/cost", name: "cost", component: CostView },
+		{ path: "/estimation/:name/supply", name: "supply", component: SupplyView },
 		{ path: "/estimation/:name/:section", name: "section", component: SectionView },
 		{ path: "/:pathMatch(.*)*", redirect: "/" },
 	],

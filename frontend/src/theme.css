@@ -770,3 +770,54 @@ button:focus-visible {
 	color: var(--amber-ink);
 	font-weight: 600;
 }
+
+/* Supply */
+.supply-line {
+	width: 100%;
+	color: var(--ink);
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.supply-line.is-cancelled {
+	opacity: 0.6;
+}
+
+.supply-line.is-cancelled .row-title {
+	text-decoration: line-through;
+}
+
+.supply-send {
+	gap: 10px;
+}
+
+.sheet-actions {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.sheet-actions .is-danger {
+	color: var(--danger);
+}
+
+.seg-2 {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.pick-row {
+	width: 100%;
+	border: 0;
+	border-bottom: 1px solid var(--line-soft);
+	background: transparent;
+	color: var(--ink);
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.link {
+	color: var(--margin);
+	font-weight: 600;
+}

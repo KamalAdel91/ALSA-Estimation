@@ -13,6 +13,6 @@ export const FLOW = [
 ];
 
 export function stepRoute(estimation, key) {
-	if (key === "rfq" || key === "cost") return { name: key, params: { name: estimation } };
+	if (key === "rfq" || key === "cost" || key === "supply") return { name: key, params: { name: estimation } };
 	return { name: "section", params: { name: estimation, section: key } };
 }
