@@ -32,6 +32,7 @@ const steps = computed(() => {
 		if (!s && f.key === "cost") s = { key: "cost", label: f.label, amount: price ? price.total_price : 0 };
 		if (!s) continue;
 		let done = Number(s.amount) > 0;
+		if (f.key === "rfq") done = parseInt(s.text, 10) > 0;
 		if (f.key === "scope") done = scopeDone;
 		if (f.key === "cost") done = Boolean(price && Number(price.total_price) > 0);
 		list.push({

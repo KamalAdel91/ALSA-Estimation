@@ -107,6 +107,7 @@ def get_estimation(name):
 		{"key": "test_equipment", "label": _("Test equipment"), "amount": doc.test_equipment_total},
 		{"key": "transportation", "label": _("Car & fuels"), "amount": doc.transportation_total},
 		{"key": "other_costs", "label": _("Other costs"), "amount": doc.other_costs_table_total},
+		{"key": "supply", "label": _("Supply"), "amount": doc.get("supply_total")},
 		{"key": "cost", "label": _("Cost & price"), "text": margin, "amount": None if margin else total_cost},
 		{
 			"key": "budget",
@@ -387,6 +388,43 @@ def _section_budget(doc, colors, can_see_price):
 	}
 
 
+def _section_supply(doc, colors, can_see_price):
+	"""Items the estimation buys; Supply Chain prices them through Supply Requests and Supplier Quotations."""
+	lines = doc.get("supply") or []
+	rows = []
+	for r in lines:
+		status = _("Cancelled") if r.is_cancelled else (r.supply_status or "")
+		subtitle = ", ".join(
+			x for x in (f"{_num(r.qty)} {r.uom or ''}".strip(), r.supplier, r.price_source and _(r.price_source)) if x
+		)
+		rows.append(
+			{
+				"title": r.description or r.item_code,
+				"subtitle": subtitle,
+				"badge": {"text": _(status), "tone": _supply_tone(status, r.is_cancelled)} if status else None,
+				"figures": [_fig(_("Rate"), r.rate), _fig(_("Cost"), r.cost, tone="cost")],
+			}
+		)
+	return {
+		"title": _("Supply"),
+		"facts": [{"label": _("Items"), "value": str(len([r for r in lines if not r.is_cancelled]))}],
+		"rows": rows,
+		"totals": [_fig(_("Total supply"), doc.get("supply_total"), tone="cost")],
+		"empty": _("No supply items yet. Add them on the desk for now."),
+	}
+
+
+def _supply_tone(status, cancelled):
+	s = (status or "").lower()
+	if cancelled or "cancel" in s or "reject" in s:
+		return "red"
+	if any(w in s for w in ("received", "quoted", "priced", "approved", "done", "complete")):
+		return "green"
+	if any(w in s for w in ("pending", "request", "waiting", "sent")):
+		return "amber"
+	return "gray"
+
+
 SECTIONS = {
 	"scope": _section_scope,
 	"rates": _section_rates,
@@ -394,6 +432,7 @@ SECTIONS = {
 	"test_equipment": _section_test_equipment,
 	"transportation": _section_transportation,
 	"other_costs": _section_other_costs,
+	"supply": _section_supply,
 	"budget": _section_budget,
 }
 

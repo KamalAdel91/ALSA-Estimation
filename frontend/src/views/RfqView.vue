@@ -3,6 +3,7 @@ import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { call } from "../api.js";
 import { number } from "../format.js";
+import StepPager from "../components/StepPager.vue";
 import TopBar from "../components/TopBar.vue";
 
 const route = useRoute();
@@ -50,6 +51,7 @@ onMounted(async () => {
 				<p v-if="!rfq.rows.length" class="list-empty muted">No RFQ items.</p>
 			</div>
 			<p class="muted">Read-only. Sales owns the RFQ on the Opportunity.</p>
+			<StepPager :estimation="route.params.name" current="rfq" />
 		</template>
 	</main>
 </template>
