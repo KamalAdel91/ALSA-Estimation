@@ -882,3 +882,199 @@ button:focus-visible {
 	z-index: 1;
 	background: var(--surface);
 }
+
+/* Step dock: fixed above the tab bar (69px tall), the same place on every step */
+.pager-space {
+	height: 80px;
+}
+
+.pager-dock {
+	position: fixed;
+	bottom: calc(77px + env(safe-area-inset-bottom, 0px));
+	left: 50%;
+	z-index: 9;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+	gap: 6px;
+	width: calc(100% - 24px);
+	max-width: 496px;
+	padding: 9px 6px 6px;
+	overflow: hidden;
+	border: 1px solid var(--line);
+	border-radius: 18px;
+	background: color-mix(in srgb, var(--surface) 92%, transparent);
+	box-shadow: 0 8px 24px rgba(8, 12, 20, 0.12);
+	transform: translateX(-50%);
+	-webkit-backdrop-filter: blur(14px);
+	backdrop-filter: blur(14px);
+}
+
+.pager-progress {
+	position: absolute;
+	top: 0;
+	right: 0;
+	left: 0;
+	height: 3px;
+	background: var(--line-soft);
+}
+
+.pager-progress span {
+	display: block;
+	height: 100%;
+	background: var(--amber);
+}
+
+.dock-btn {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
+	min-height: 48px;
+	padding: 6px 10px;
+	border-radius: 12px;
+	color: var(--ink);
+	text-decoration: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.dock-btn:active {
+	background: var(--line-soft);
+}
+
+.dock-next {
+	justify-content: flex-end;
+	background: var(--btn);
+	color: var(--btn-text);
+	text-align: right;
+}
+
+.dock-next:active {
+	background: var(--btn);
+	opacity: 0.9;
+}
+
+.dock-btn svg {
+	flex: none;
+}
+
+.dock-text {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	line-height: 1.2;
+}
+
+.dock-text small {
+	font-size: 11.5px;
+	font-weight: 500;
+	opacity: 0.65;
+}
+
+.dock-text span {
+	overflow: hidden;
+	font-size: 14px;
+	font-weight: 600;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* Workflow buttons: the same floating dock */
+.action-bar {
+	bottom: calc(77px + env(safe-area-inset-bottom, 0px));
+	margin: 0 12px;
+	padding: 8px;
+	border: 1px solid var(--line);
+	border-radius: 18px;
+	background: color-mix(in srgb, var(--surface) 92%, transparent);
+	box-shadow: 0 8px 24px rgba(8, 12, 20, 0.12);
+	-webkit-backdrop-filter: blur(14px);
+	backdrop-filter: blur(14px);
+}
+
+/* General polish */
+:root {
+	--radius: 14px;
+}
+
+.topbar {
+	border-bottom-color: var(--line-soft);
+	background: color-mix(in srgb, var(--surface) 88%, transparent);
+	-webkit-backdrop-filter: blur(14px);
+	backdrop-filter: blur(14px);
+}
+
+.input:focus,
+.step-input:focus,
+.search:focus-within {
+	border-color: var(--amber);
+	outline: none;
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--amber) 22%, transparent);
+}
+
+.search input:focus {
+	box-shadow: none;
+}
+
+.step-input {
+	background: var(--surface);
+}
+
+a,
+button {
+	-webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.btn-primary,
+	.btn-secondary,
+	.btn-danger,
+	.btn-dashed,
+	.chip,
+	.step-btn,
+	.dock-btn {
+		transition: transform 0.08s ease;
+	}
+
+	.btn-primary:active,
+	.btn-secondary:active,
+	.btn-danger:active,
+	.btn-dashed:active,
+	.chip:active,
+	.step-btn:active,
+	.dock-btn:active {
+		transform: scale(0.97);
+	}
+}
+
+.sheet {
+	border-radius: 22px 22px 0 0;
+	box-shadow: 0 -8px 30px rgba(8, 12, 20, 0.18);
+}
+
+.sheet-head .row-title {
+	font-size: 17px;
+}
+
+.est-title,
+.hero-value {
+	font-weight: 700;
+	letter-spacing: -0.02em;
+}
+
+.row-title {
+	font-weight: 600;
+}
+
+.kpi strong,
+.row-aside,
+.total-value {
+	font-weight: 700;
+}
+
+.facts dt,
+.figure span,
+.summary-kpis span,
+.kpi span,
+.label {
+	font-weight: 500;
+}
