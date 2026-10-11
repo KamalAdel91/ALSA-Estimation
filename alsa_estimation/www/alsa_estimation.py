@@ -1,8 +1,11 @@
+from urllib.parse import quote
+
 import frappe
 from frappe import _
 from frappe.utils import cint, get_fullname
 
 from alsa_estimation import APP_ROUTE, APP_TITLE
+from alsa_estimation.branding import app_logo, company_logo
 
 no_cache = 1
 
@@ -23,7 +26,10 @@ def get_context(context):
 		"route": APP_ROUTE,
 		"title": APP_TITLE,
 		"user": frappe.session.user,
-		"full_name": get_fullname(frappe.session.user),
+		"full_name": _employee_name() or get_fullname(frappe.session.user),
+		"user_image": _url(frappe.db.get_value("User", frappe.session.user, "user_image")),
+		"company": _company(),
+		"logo": _url(frappe.db.get_single_value("Navbar Settings", "app_logo") or company_logo() or app_logo()),
 		"push": bool(frappe.conf.get("push_relay_server_url"))
 		and bool(
 			cint(frappe.db.get_single_value("Push Notification Settings", "enable_push_notification_relay"))
@@ -32,3 +38,21 @@ def get_context(context):
 	context.boot = frappe.as_json(boot, indent=None).replace("</", "<\\/")
 	context.title = APP_TITLE
 	return context
+
+
+def _employee_name():
+	"""The name on the user's Employee record, when the user is linked to one."""
+	if not frappe.db.exists("DocType", "Employee"):
+		return None
+	return frappe.db.get_value("Employee", {"user_id": frappe.session.user, "status": "Active"}, "employee_name")
+
+
+def _company():
+	return frappe.defaults.get_user_default("Company") or frappe.db.get_single_value(
+		"Global Defaults", "default_company"
+	)
+
+
+def _url(path):
+	"""File paths can hold spaces; encode them so the browser can load the image."""
+	return quote(path, safe="/:?=&%#") if path else None
