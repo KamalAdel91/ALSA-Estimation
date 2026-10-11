@@ -10,6 +10,7 @@ import OtherCostsEditor from "../components/OtherCostsEditor.vue";
 import RatesEditor from "../components/RatesEditor.vue";
 import ScopeEditor from "../components/ScopeEditor.vue";
 import SkeletonCards from "../components/SkeletonCards.vue";
+import StepPager from "../components/StepPager.vue";
 import ThresholdsEditor from "../components/ThresholdsEditor.vue";
 import TopBar from "../components/TopBar.vue";
 
@@ -39,12 +40,6 @@ const editorProps = computed(() => {
 	if (section === "rates" || section === "accommodation") props.dots = dots.value;
 	if (section === "test_equipment" || section === "transportation") props.section = section;
 	return props;
-});
-
-// The step after this one, so the estimator can go straight on.
-const next = computed(() => {
-	const i = FLOW.findIndex((f) => f.key === section);
-	return i >= 0 && i < FLOW.length - 1 ? FLOW[i + 1] : null;
 });
 
 async function load() {
@@ -134,15 +129,7 @@ onMounted(load);
 					</button>
 				</article>
 				<p v-if="!data.rows.length" class="muted">{{ data.empty }}</p>
-				<RouterLink v-if="next" :to="stepRoute(route.params.name, next.key)" class="next-step">
-					<span>
-						<small>Next step</small>
-						{{ next.label }}
-					</span>
-					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-						<path d="M9 6l6 6-6 6" />
-					</svg>
-				</RouterLink>
+				<StepPager :estimation="route.params.name" :current="section" />
 			</template>
 		</template>
 	</main>

@@ -5,6 +5,7 @@ import { call } from "../api.js";
 import { amount, number } from "../format.js";
 import MarginEditor from "../components/MarginEditor.vue";
 import PriceHero from "../components/PriceHero.vue";
+import StepPager from "../components/StepPager.vue";
 import TopBar from "../components/TopBar.vue";
 
 const route = useRoute();
@@ -101,6 +102,7 @@ onMounted(load);
 					<span class="bd-pct">100%</span>
 				</div>
 			</section>
+			<StepPager :estimation="route.params.name" current="cost" />
 		</template>
 	</main>
 </template>
