@@ -3,6 +3,9 @@ import { onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { call } from "../api.js";
 import EstimationCard from "../components/EstimationCard.vue";
+import PullIndicator from "../components/PullIndicator.vue";
+import SkeletonCards from "../components/SkeletonCards.vue";
+import { usePullRefresh } from "../pull.js";
 
 const route = useRoute();
 const router = useRouter();
@@ -46,10 +49,13 @@ watch(
 	() => [route.query.state, route.query.card, route.query.q],
 	() => load(),
 );
+
+const { pull, busy, ready } = usePullRefresh(() => load());
 onMounted(() => load());
 </script>
 
 <template>
+	<PullIndicator :pull="pull" :busy="busy" :ready="ready" />
 	<header class="page-head list-head">
 		<h1>Estimations</h1>
 		<label class="search">
@@ -99,11 +105,11 @@ onMounted(() => load());
 	</div>
 	<main class="page-body">
 		<p v-if="error" class="error">{{ error }}</p>
+		<SkeletonCards v-if="loading && !rows.length" :count="4" />
 		<EstimationCard v-for="row in rows" :key="row.name" :row="row" />
 		<p v-if="!loading && !error && !rows.length" class="muted">No estimations match.</p>
 		<button v-if="more" type="button" class="btn-secondary" :disabled="loading" @click="load(true)">
-			Load more
+			{{ loading ? "Loading…" : "Load more" }}
 		</button>
-		<p v-if="loading" class="muted">Loading…</p>
 	</main>
 </template>

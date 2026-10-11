@@ -2,6 +2,9 @@
 import { computed, onMounted, ref } from "vue";
 import { call } from "../api.js";
 import EstimationCard from "../components/EstimationCard.vue";
+import PullIndicator from "../components/PullIndicator.vue";
+import SkeletonCards from "../components/SkeletonCards.vue";
+import { usePullRefresh } from "../pull.js";
 
 const boot = window.alsa_boot;
 const now = new Date();
@@ -22,22 +25,38 @@ const logoOk = ref(Boolean(boot.logo));
 const imageOk = ref(Boolean(boot.user_image));
 
 const loading = ref(true);
+const loaded = ref(false);
 const error = ref("");
 const home = ref({ cards: [], action: [], recent: [] });
 const rows = computed(() => (home.value.action.length ? home.value.action : home.value.recent));
 
-onMounted(async () => {
+// Every card counts estimations, so the word only takes room on a phone-width tile.
+function short(label) {
+	const s = String(label || "")
+		.replace(/\bestimations?\b/gi, "")
+		.replace(/\s{2,}/g, " ")
+		.trim();
+	return s ? s[0].toUpperCase() + s.slice(1) : label;
+}
+
+async function load() {
+	error.value = "";
 	try {
 		home.value = await call("alsa_estimation.api.get_home");
+		loaded.value = true;
 	} catch (e) {
 		error.value = e.message;
 	} finally {
 		loading.value = false;
 	}
-});
+}
+
+const { pull, busy, ready } = usePullRefresh(load);
+onMounted(load);
 </script>
 
 <template>
+	<PullIndicator :pull="pull" :busy="busy" :ready="ready" />
 	<header class="page-head">
 		<div class="head-row">
 			<img v-if="logoOk" :src="boot.logo" :alt="boot.company || boot.title" class="head-logo" @error="logoOk = false" />
@@ -49,9 +68,9 @@ onMounted(async () => {
 		<h1>{{ greeting }}, {{ firstName }}</h1>
 	</header>
 	<main class="page-body">
-		<p v-if="loading" class="muted">Loading…</p>
-		<p v-else-if="error" class="error">{{ error }}</p>
-		<template v-else>
+		<p v-if="error" class="error">{{ error }}</p>
+		<SkeletonCards v-if="loading && !loaded" :count="3" tiles />
+		<template v-else-if="loaded">
 			<div v-if="home.cards.length" class="tiles">
 				<RouterLink
 					v-for="card in home.cards"
@@ -60,7 +79,7 @@ onMounted(async () => {
 					:to="{ name: 'list', query: { card: card.name } }"
 				>
 					<span class="tile-value">{{ card.value }}</span>
-					<span class="tile-label">{{ card.label }}</span>
+					<span class="tile-label">{{ short(card.label) }}</span>
 				</RouterLink>
 			</div>
 			<section class="stack">
@@ -95,8 +114,8 @@ onMounted(async () => {
 .head-initials {
 	display: grid;
 	place-items: center;
-	background: var(--ink);
-	color: #fff;
+	background: var(--btn);
+	color: var(--btn-text);
 	font-weight: 700;
 	font-size: 15px;
 }

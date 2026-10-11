@@ -5,6 +5,9 @@ import { call } from "../api.js";
 import { when } from "../format.js";
 import { isIOS, isStandalone } from "../install.js";
 import { disablePush, enablePush, pushAvailable, pushOn } from "../push.js";
+import PullIndicator from "../components/PullIndicator.vue";
+import SkeletonCards from "../components/SkeletonCards.vue";
+import { usePullRefresh } from "../pull.js";
 
 const router = useRouter();
 const rows = ref([]);
@@ -61,10 +64,16 @@ async function togglePush() {
 	}
 }
 
+// A pull also refreshes the unread count on the tab bar.
+const { pull, busy, ready } = usePullRefresh(async () => {
+	await load();
+	window.dispatchEvent(new Event("alsa-alerts-read"));
+});
 onMounted(() => load());
 </script>
 
 <template>
+	<PullIndicator :pull="pull" :busy="busy" :ready="ready" />
 	<header class="page-head list-head">
 		<div class="row-between">
 			<h1>Alerts</h1>
@@ -99,6 +108,7 @@ onMounted(() => load());
 			<p v-if="pushError" class="error">{{ pushError }}</p>
 		</section>
 		<p v-if="error" class="error">{{ error }}</p>
+		<SkeletonCards v-if="loading && !rows.length" :count="4" />
 		<button
 			v-for="a in rows"
 			:key="a.name"
@@ -119,7 +129,8 @@ onMounted(() => load());
 			</span>
 		</button>
 		<p v-if="!loading && !error && !rows.length" class="muted">No alerts yet.</p>
-		<button v-if="more" type="button" class="btn-secondary" :disabled="loading" @click="load(true)">Load more</button>
-		<p v-if="loading" class="muted">Loading…</p>
+		<button v-if="more" type="button" class="btn-secondary" :disabled="loading" @click="load(true)">
+			{{ loading ? "Loading…" : "Load more" }}
+		</button>
 	</main>
 </template>
