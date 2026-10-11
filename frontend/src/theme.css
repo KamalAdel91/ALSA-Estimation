@@ -1,6 +1,6 @@
-/* Theme layer, loaded after style.css: tokens, dark mode, and the home, cards, loading and tab bar. */
+/* Theme layer, loaded after style.css: tokens, light/dark, and the redesigned screens. */
 :root {
-	color-scheme: light dark;
+	color-scheme: light;
 	--ground: #eceff4;
 	--surface: #ffffff;
 	--line: #dde2ea;
@@ -14,29 +14,108 @@
 	--btn: #172033;
 	--btn-text: #ffffff;
 	--skel: #e2e7ee;
+	--warn-bg: #fff6e8;
+	--warn-line: #f3d9ae;
+	--warn-ink: #6b3a00;
+	--warn-strong: #8a4b00;
+	--price-bg: #eef8f1;
+	--price-line: #cdebd6;
+	--price-sub: #3d5a47;
+	--split-bg: #ffffff;
+	--sub-ink: #3f4a5a;
+	--tone-gray-bg: #eef1f5;
+	--tone-gray-ink: #3f4a5a;
+	--tone-blue-bg: #e8f0fe;
+	--tone-blue-ink: #1d4ed8;
+	--tone-amber-bg: #fff1db;
+	--tone-amber-ink: #8a4b00;
+	--tone-green-bg: #e3f4e8;
+	--tone-green-ink: #146c35;
+	--tone-red-bg: #fdecec;
+	--tone-red-ink: #b42318;
 	--font: "IBM Plex Sans", "IBM Plex Sans Arabic", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
-	:root {
-		--ground: #0e1420;
-		--surface: #172031;
-		--line: #26324a;
-		--line-soft: #1e283c;
-		--ink: #e6eaf2;
-		--muted: #97a2b4;
-		--field: #34425e;
-		--cost: #fb923c;
-		--margin: #86a8ff;
-		--price: #4ade80;
-		--danger: #f87171;
-		--amber: #f0b43c;
-		--amber-soft: #33290f;
-		--amber-ink: #f6d38a;
-		--btn: #e6eaf2;
-		--btn-text: #0e1420;
-		--skel: #212c42;
-	}
+	:root:not([data-theme="light"]) {
+	--ground: #0e1420;
+	--surface: #172031;
+	--line: #26324a;
+	--line-soft: #1e283c;
+	--ink: #e6eaf2;
+	--muted: #97a2b4;
+	--field: #34425e;
+	--cost: #fb923c;
+	--margin: #86a8ff;
+	--price: #4ade80;
+	--danger: #f87171;
+	--amber: #f0b43c;
+	--amber-soft: #33290f;
+	--amber-ink: #f6d38a;
+	--btn: #e6eaf2;
+	--btn-text: #0e1420;
+	--skel: #212c42;
+	--warn-bg: #33270f;
+	--warn-line: #5a4518;
+	--warn-ink: #f3d6a0;
+	--warn-strong: #f6c46a;
+	--price-bg: #11261a;
+	--price-line: #1f4a2e;
+	--price-sub: #9cc9aa;
+	--split-bg: #0e1420;
+	--sub-ink: #b6bfcc;
+	--tone-gray-bg: #232e44;
+	--tone-gray-ink: #c3cad6;
+	--tone-blue-bg: #1a2a4f;
+	--tone-blue-ink: #9bb8ff;
+	--tone-amber-bg: #3a2c10;
+	--tone-amber-ink: #f6c46a;
+	--tone-green-bg: #12301e;
+	--tone-green-ink: #6ee79a;
+	--tone-red-bg: #3d1717;
+	--tone-red-ink: #ff9a9a;
+	color-scheme: dark;
+}
+}
+
+:root[data-theme="dark"] {
+	--ground: #0e1420;
+	--surface: #172031;
+	--line: #26324a;
+	--line-soft: #1e283c;
+	--ink: #e6eaf2;
+	--muted: #97a2b4;
+	--field: #34425e;
+	--cost: #fb923c;
+	--margin: #86a8ff;
+	--price: #4ade80;
+	--danger: #f87171;
+	--amber: #f0b43c;
+	--amber-soft: #33290f;
+	--amber-ink: #f6d38a;
+	--btn: #e6eaf2;
+	--btn-text: #0e1420;
+	--skel: #212c42;
+	--warn-bg: #33270f;
+	--warn-line: #5a4518;
+	--warn-ink: #f3d6a0;
+	--warn-strong: #f6c46a;
+	--price-bg: #11261a;
+	--price-line: #1f4a2e;
+	--price-sub: #9cc9aa;
+	--split-bg: #0e1420;
+	--sub-ink: #b6bfcc;
+	--tone-gray-bg: #232e44;
+	--tone-gray-ink: #c3cad6;
+	--tone-blue-bg: #1a2a4f;
+	--tone-blue-ink: #9bb8ff;
+	--tone-amber-bg: #3a2c10;
+	--tone-amber-ink: #f6c46a;
+	--tone-green-bg: #12301e;
+	--tone-green-ink: #6ee79a;
+	--tone-red-bg: #3d1717;
+	--tone-red-ink: #ff9a9a;
+	color-scheme: dark;
 }
 
 html,
@@ -57,22 +136,13 @@ textarea {
 	font-family: var(--font);
 }
 
-.tile-value,
-.est-amount,
-.total-value,
-.figure strong,
-.list-aside,
-.input {
-	font-variant-numeric: tabular-nums;
-}
-
 a:focus-visible,
 button:focus-visible {
 	outline: 2px solid var(--amber);
 	outline-offset: 2px;
 }
 
-/* Colors that style.css ties to the light theme */
+/* Colors style.css had fixed for the light theme */
 .btn-primary,
 .chip.is-on {
 	border-color: var(--btn);
@@ -97,6 +167,54 @@ button:focus-visible {
 	background: rgba(8, 12, 20, 0.55);
 }
 
+.hint-warn,
+.banner-warn {
+	border-color: var(--warn-line);
+	background: var(--warn-bg);
+	color: var(--warn-ink);
+}
+
+.banner-warn strong,
+.banner-when {
+	color: var(--warn-strong);
+}
+
+.tone-gray { background: var(--tone-gray-bg); color: var(--tone-gray-ink); }
+.tone-blue { background: var(--tone-blue-bg); color: var(--tone-blue-ink); }
+.tone-amber { background: var(--tone-amber-bg); color: var(--tone-amber-ink); }
+.tone-green { background: var(--tone-green-bg); color: var(--tone-green-ink); }
+.tone-red { background: var(--tone-red-bg); color: var(--tone-red-ink); }
+
+.summary-price {
+	border-color: var(--price-line);
+	background: var(--price-bg);
+}
+
+.summary-price .summary-kpis {
+	border-top-color: var(--price-line);
+}
+
+.summary-price .summary-kpis span,
+.hero-sub,
+.legend {
+	color: var(--price-sub);
+}
+
+.split {
+	background: var(--split-bg);
+}
+
+.bd-subs .bd-label {
+	color: var(--sub-ink);
+}
+
+.btn-link {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-decoration: none;
+}
+
 /* Page frame */
 .page-head {
 	padding: 20px 20px 10px;
@@ -113,7 +231,7 @@ button:focus-visible {
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
-	padding: 8px 20px 28px;
+	padding: 12px 20px 28px;
 }
 
 .chips {
@@ -128,34 +246,31 @@ button:focus-visible {
 	font-weight: 600;
 }
 
+.card .section-title {
+	margin: 0;
+}
+
 /* Home: the counts as one divided strip */
 .tiles {
 	display: grid;
 	grid-auto-columns: minmax(0, 1fr);
 	grid-auto-flow: column;
+	grid-template-columns: none;
 	gap: 0;
-	padding: 0;
 	overflow: hidden;
 	border: 1px solid var(--line);
 	border-radius: 14px;
 	background: var(--surface);
-	box-shadow: none;
 }
 
 .tile {
-	display: flex;
-	flex-direction: column;
 	justify-content: space-between;
 	gap: 8px;
-	min-height: 0;
 	padding: 14px 14px 12px;
 	border: 0;
 	border-inline-start: 1px solid var(--line-soft);
 	border-radius: 0;
 	background: transparent;
-	box-shadow: none;
-	color: var(--ink);
-	text-decoration: none;
 }
 
 .tile:first-child {
@@ -174,25 +289,14 @@ button:focus-visible {
 }
 
 .tile-label {
-	color: var(--muted);
-	font-size: 12.5px;
 	font-weight: 500;
-	line-height: 1.3;
 }
 
 /* Estimation card, with the next step as a work ticket */
 .est-card {
 	position: relative;
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
 	padding: 14px 16px;
-	border: 1px solid var(--line);
 	border-radius: 14px;
-	background: var(--surface);
-	box-shadow: none;
-	color: var(--ink);
-	text-decoration: none;
 }
 
 .est-card:active {
@@ -200,12 +304,8 @@ button:focus-visible {
 }
 
 .est-customer {
-	min-width: 0;
-	overflow: hidden;
 	font-size: 16px;
 	font-weight: 600;
-	text-overflow: ellipsis;
-	white-space: nowrap;
 }
 
 .est-sub {
@@ -285,28 +385,202 @@ button:focus-visible {
 	min-width: 0;
 }
 
-.est-ticket[data-tone="red"],
-.est-ticket[data-tone="danger"] {
-	background: color-mix(in srgb, var(--danger) 12%, var(--surface));
-	color: var(--danger);
-}
-
-.est-ticket[data-tone="red"] .est-ticket-mark,
-.est-ticket[data-tone="danger"] .est-ticket-mark {
-	background: var(--danger);
-}
-
 .badge {
-	flex: none;
 	padding: 3px 8px;
 	border-radius: 6px;
-	font-size: 12px;
-	font-weight: 600;
-	white-space: nowrap;
 }
 
 .alert-row {
 	border-radius: 14px;
+}
+
+/* Estimation steps */
+.steps {
+	display: flex;
+	flex-direction: column;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	background: var(--surface);
+	list-style: none;
+}
+
+.step {
+	position: relative;
+}
+
+.step::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 29px;
+	width: 1.5px;
+	background: var(--line);
+}
+
+.step:first-child::before {
+	top: 50%;
+}
+
+.step:last-child::before {
+	bottom: 50%;
+}
+
+.step:only-child::before {
+	display: none;
+}
+
+.step-link {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-height: 62px;
+	padding: 12px 12px 12px 16px;
+	border-bottom: 1px solid var(--line-soft);
+	color: var(--ink);
+	text-decoration: none;
+}
+
+.step:last-child .step-link {
+	border-bottom: 0;
+}
+
+.step-link:active {
+	background: var(--line-soft);
+}
+
+.step-mark {
+	position: relative;
+	z-index: 1;
+	display: grid;
+	flex: none;
+	place-items: center;
+	width: 28px;
+	height: 28px;
+	border: 1.5px solid var(--field);
+	border-radius: 50%;
+	background: var(--surface);
+	color: var(--muted);
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.step.is-done .step-mark {
+	border-color: var(--price);
+	background: var(--price);
+	color: var(--surface);
+}
+
+.step.is-next .step-link {
+	background: var(--amber-soft);
+}
+
+.step.is-next .step-mark {
+	border-color: var(--amber);
+	background: var(--amber);
+	color: #1b1300;
+}
+
+.step.is-next .step-help {
+	color: var(--amber-ink);
+	font-weight: 600;
+}
+
+.step-text {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 1px;
+	min-width: 0;
+}
+
+.step-label {
+	font-size: 15px;
+	font-weight: 600;
+}
+
+.step-help {
+	color: var(--muted);
+	font-size: 12.5px;
+}
+
+.step.is-waiting .step-label,
+.step.is-waiting .step-value {
+	opacity: 0.55;
+}
+
+.step-value {
+	flex: none;
+	font-size: 13.5px;
+	font-weight: 700;
+	text-align: right;
+}
+
+.step-value.is-empty {
+	color: var(--muted);
+	font-weight: 500;
+}
+
+/* Inside a step: subtotal first, the next step last */
+.subtotal {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 14px 16px;
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	background: var(--surface);
+}
+
+.subtotal .total-value {
+	font-size: 20px;
+	font-weight: 700;
+}
+
+.next-step {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	margin-top: 4px;
+	padding: 14px 16px;
+	border-radius: 14px;
+	background: var(--btn);
+	color: var(--btn-text);
+	font-size: 15px;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.next-step small {
+	display: block;
+	font-size: 12px;
+	font-weight: 500;
+	opacity: 0.7;
+}
+
+.add-chip {
+	min-height: 36px;
+	color: var(--ink);
+	font-family: inherit;
+	cursor: pointer;
+}
+
+.crew-count {
+	color: var(--muted);
+	font-size: 12.5px;
+	font-weight: 600;
+}
+
+.head-avatar-btn {
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: none;
+	cursor: pointer;
 }
 
 /* Loading */
@@ -390,7 +664,6 @@ button:focus-visible {
 
 /* Tab bar */
 .tabbar {
-	border-top: 1px solid var(--line);
 	background: color-mix(in srgb, var(--surface) 90%, transparent);
 	-webkit-backdrop-filter: blur(12px);
 	backdrop-filter: blur(12px);
@@ -398,11 +671,9 @@ button:focus-visible {
 
 .tab {
 	position: relative;
-	color: var(--muted);
 }
 
 .tab.is-active {
-	color: var(--ink);
 	font-weight: 600;
 }
 

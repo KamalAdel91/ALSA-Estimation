@@ -42,6 +42,8 @@ onMounted(load);
 				:estimation="est.name"
 				:modified="est.modified"
 				:value="est.price.margin_percentage"
+				:cost="Number(est.totals.total_cost)"
+				:currency="est.currency"
 				@saved="load"
 			/>
 			<div class="kpis">

@@ -2,12 +2,14 @@
 import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { call } from "../api.js";
+import { FLOW, stepRoute } from "../flow.js";
 import { figure } from "../format.js";
 import AccommodationEditor from "../components/AccommodationEditor.vue";
 import AssetsEditor from "../components/AssetsEditor.vue";
 import OtherCostsEditor from "../components/OtherCostsEditor.vue";
 import RatesEditor from "../components/RatesEditor.vue";
 import ScopeEditor from "../components/ScopeEditor.vue";
+import SkeletonCards from "../components/SkeletonCards.vue";
 import ThresholdsEditor from "../components/ThresholdsEditor.vue";
 import TopBar from "../components/TopBar.vue";
 
@@ -37,6 +39,12 @@ const editorProps = computed(() => {
 	if (section === "rates" || section === "accommodation") props.dots = dots.value;
 	if (section === "test_equipment" || section === "transportation") props.section = section;
 	return props;
+});
+
+// The step after this one, so the estimator can go straight on.
+const next = computed(() => {
+	const i = FLOW.findIndex((f) => f.key === section);
+	return i >= 0 && i < FLOW.length - 1 ? FLOW[i + 1] : null;
 });
 
 async function load() {
@@ -74,10 +82,16 @@ onMounted(load);
 	/>
 	<main class="page-body">
 		<p v-if="error" class="error">{{ error }}</p>
-		<p v-if="!data && !error" class="muted">Loading…</p>
+		<SkeletonCards v-if="!data && !error" :count="2" />
 		<template v-if="data">
 			<component :is="editor.component" v-if="editing" v-bind="editorProps" @cancel="editing = false" @saved="saved" />
 			<template v-else>
+				<section v-if="data.totals.length" class="subtotal">
+					<div v-for="t in data.totals" :key="t.label" class="row-between">
+						<span class="total-label">{{ t.label }}</span>
+						<strong class="total-value" :class="t.tone ? `is-${t.tone}` : ''">{{ figure(t) }}</strong>
+					</div>
+				</section>
 				<dl v-if="data.facts.length" class="card facts">
 					<div v-for="f in data.facts" :key="f.label">
 						<dt>{{ f.label }}</dt>
@@ -120,12 +134,15 @@ onMounted(load);
 					</button>
 				</article>
 				<p v-if="!data.rows.length" class="muted">{{ data.empty }}</p>
-				<section class="card totals">
-					<div v-for="t in data.totals" :key="t.label" class="row-between">
-						<span class="total-label">{{ t.label }}</span>
-						<strong class="total-value" :class="t.tone ? `is-${t.tone}` : ''">{{ figure(t) }}</strong>
-					</div>
-				</section>
+				<RouterLink v-if="next" :to="stepRoute(route.params.name, next.key)" class="next-step">
+					<span>
+						<small>Next step</small>
+						{{ next.label }}
+					</span>
+					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<path d="M9 6l6 6-6 6" />
+					</svg>
+				</RouterLink>
 			</template>
 		</template>
 	</main>

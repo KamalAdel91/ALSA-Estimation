@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from "vue";
 import { call } from "../api.js";
+import AccountSheet from "../components/AccountSheet.vue";
 import EstimationCard from "../components/EstimationCard.vue";
 import PullIndicator from "../components/PullIndicator.vue";
 import SkeletonCards from "../components/SkeletonCards.vue";
@@ -23,6 +24,7 @@ const initials = name
 	.join("");
 const logoOk = ref(Boolean(boot.logo));
 const imageOk = ref(Boolean(boot.user_image));
+const account = ref(false);
 
 const loading = ref(true);
 const loaded = ref(false);
@@ -61,8 +63,10 @@ onMounted(load);
 		<div class="head-row">
 			<img v-if="logoOk" :src="boot.logo" :alt="boot.company || boot.title" class="head-logo" @error="logoOk = false" />
 			<span v-else></span>
-			<img v-if="imageOk" :src="boot.user_image" :alt="name" class="head-avatar" @error="imageOk = false" />
-			<span v-else class="head-avatar head-initials" :title="name">{{ initials }}</span>
+			<button type="button" class="head-avatar-btn" aria-label="Account and appearance" @click="account = true">
+				<img v-if="imageOk" :src="boot.user_image" alt="" class="head-avatar" @error="imageOk = false" />
+				<span v-else class="head-avatar head-initials">{{ initials }}</span>
+			</button>
 		</div>
 		<p class="muted">{{ today }}</p>
 		<h1>{{ greeting }}, {{ firstName }}</h1>
@@ -89,6 +93,7 @@ onMounted(load);
 			</section>
 		</template>
 	</main>
+	<AccountSheet v-if="account" :name="name" :email="boot.user" @close="account = false" />
 </template>
 
 <style scoped>
@@ -105,11 +110,11 @@ onMounted(load);
 	object-fit: contain;
 }
 .head-avatar {
+	display: block;
 	width: 40px;
 	height: 40px;
 	border-radius: 50%;
 	object-fit: cover;
-	flex-shrink: 0;
 }
 .head-initials {
 	display: grid;

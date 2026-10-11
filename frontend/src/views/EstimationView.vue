@@ -1,11 +1,13 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { call } from "../api.js";
+import { FLOW, stepRoute } from "../flow.js";
 import { amount, date, number, when } from "../format.js";
 import { uploadFile } from "../upload.js";
 import ActionSheet from "../components/ActionSheet.vue";
 import PriceHero from "../components/PriceHero.vue";
+import SkeletonCards from "../components/SkeletonCards.vue";
 import StateBadge from "../components/StateBadge.vue";
 import TopBar from "../components/TopBar.vue";
 
@@ -18,9 +20,42 @@ const confirming = ref(null);
 const uploading = ref(false);
 const uploadError = ref("");
 
-function target(section) {
-	if (section.key === "rfq" || section.key === "cost") return { name: section.key, params: { name } };
-	return { name: "section", params: { name, section: section.key } };
+// The cost sections as numbered steps; a step is done once it adds to the cost.
+const steps = computed(() => {
+	if (!est.value) return [];
+	const byKey = Object.fromEntries(est.value.sections.map((s) => [s.key, s]));
+	const price = est.value.price;
+	const scopeDone = Number(est.value.totals.total_work_days) > 0;
+	const list = [];
+	for (const f of FLOW) {
+		let s = byKey[f.key];
+		if (!s && f.key === "cost") s = { key: "cost", label: f.label, amount: price ? price.total_price : 0 };
+		if (!s) continue;
+		let done = Number(s.amount) > 0;
+		if (f.key === "scope") done = scopeDone;
+		if (f.key === "cost") done = Boolean(price && Number(price.total_price) > 0);
+		list.push({
+			...s,
+			help: f.help,
+			done,
+			next: f.key === "scope" && !scopeDone,
+			waiting: !scopeDone && (f.key === "rates" || f.key === "accommodation"),
+		});
+	}
+	return list;
+});
+const more = computed(() => (est.value ? est.value.sections.filter((s) => !FLOW.some((f) => f.key === s.key)) : []));
+
+function valueText(s) {
+	if (s.key === "cost" && est.value.price && Number(est.value.price.total_price) > 0) return amount(est.value.price.total_price);
+	if (s.text) return s.text;
+	return Number(s.amount) > 0 ? amount(s.amount) : "Not added";
+}
+
+function helpText(s) {
+	if (s.next) return "Start here";
+	if (s.waiting) return "Needs the crew first";
+	return s.help;
 }
 
 function buttonClass(action, i) {
@@ -81,7 +116,7 @@ onMounted(load);
 	</TopBar>
 	<main class="page-body">
 		<p v-if="error" class="error">{{ error }}</p>
-		<p v-if="!est && !error" class="muted">Loading…</p>
+		<SkeletonCards v-if="!est && !error" :count="3" />
 		<template v-if="est">
 			<section class="card">
 				<div>
@@ -131,11 +166,40 @@ onMounted(load);
 				</div>
 			</RouterLink>
 
-			<nav class="sections" aria-label="Estimation sections">
-				<RouterLink v-for="s in est.sections" :key="s.key" :to="target(s)" class="section-row">
+			<div>
+				<h2 class="section-title">Estimation steps</h2>
+				<ol class="steps">
+					<li
+						v-for="(s, i) in steps"
+						:key="s.key"
+						class="step"
+						:class="{ 'is-done': s.done, 'is-next': s.next, 'is-waiting': s.waiting }"
+					>
+						<RouterLink :to="stepRoute(name, s.key)" class="step-link">
+							<span class="step-mark" aria-hidden="true">
+								<svg v-if="s.done" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+									<path d="M5 12.5l4.5 4.5L19 7.5" />
+								</svg>
+								<template v-else>{{ i + 1 }}</template>
+							</span>
+							<span class="step-text">
+								<span class="step-label">{{ s.label }}</span>
+								<span class="step-help">{{ helpText(s) }}</span>
+							</span>
+							<span class="step-value" :class="{ 'is-empty': valueText(s) === 'Not added' }">{{ valueText(s) }}</span>
+							<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+								<path d="M9 6l6 6-6 6" />
+							</svg>
+						</RouterLink>
+					</li>
+				</ol>
+			</div>
+
+			<nav v-if="more.length" class="sections" aria-label="More">
+				<RouterLink v-for="s in more" :key="s.key" :to="stepRoute(name, s.key)" class="section-row">
 					<span class="section-label">{{ s.label }}</span>
 					<span v-if="s.text" class="muted">{{ s.text }}</span>
-					<span v-else class="section-amount">{{ amount(s.amount) }}</span>
+					<span v-else-if="Number(s.amount) > 0" class="section-amount">{{ amount(s.amount) }}</span>
 					<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 						<path d="M9 6l6 6-6 6" />
 					</svg>

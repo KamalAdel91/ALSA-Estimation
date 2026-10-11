@@ -15,17 +15,16 @@ const emit = defineEmits(["close", "saved"]);
 
 const days = ref(props.row.edit.days_per_equipment);
 const crew = ref(props.row.edit.roles.map((r) => ({ ...r })));
-const adding = ref("");
 const saving = ref(false);
 const error = ref("");
 
 const teamDays = computed(() => Math.round(props.row.edit.quantity * days.value * 100) / 100);
+const people = computed(() => crew.value.reduce((sum, c) => sum + (Number(c.count) || 0), 0));
 const dots = computed(() => Object.fromEntries(props.trades.map((t) => [t.name, t.dot])));
 const available = computed(() => props.trades.filter((t) => !crew.value.some((c) => c.trade === t.name)));
 
-function addRole() {
-	if (adding.value) crew.value.push({ trade: adding.value, count: 1 });
-	adding.value = "";
+function addRole(trade) {
+	crew.value.push({ trade, count: 1 });
 }
 
 async function save() {
@@ -62,7 +61,10 @@ async function save() {
 			</div>
 		</div>
 		<div class="field">
-			<span class="label">Crew</span>
+			<div class="row-between">
+				<span class="label">Crew</span>
+				<span class="crew-count">{{ people }} {{ people === 1 ? "person" : "people" }}</span>
+			</div>
 			<div v-for="(c, i) in crew" :key="c.trade" class="crew-row">
 				<span class="dot dot-lg" :style="{ background: dots[c.trade] || '#64748B' }"></span>
 				<span class="crew-trade">{{ c.trade }}</span>
@@ -73,11 +75,26 @@ async function save() {
 					</svg>
 				</button>
 			</div>
-			<label v-if="available.length" class="sr-only" for="scope-add-role">Add role</label>
-			<select v-if="available.length" id="scope-add-role" v-model="adding" class="input" @change="addRole">
-				<option value="">Add role…</option>
-				<option v-for="t in available" :key="t.name" :value="t.name">{{ t.name }}</option>
-			</select>
+			<p v-if="!crew.length" class="muted">No crew yet. Tap a trade below to add it.</p>
+		</div>
+		<div v-if="available.length" class="field">
+			<span class="label">Add a trade</span>
+			<div class="trade-chips">
+				<button
+					v-for="t in available"
+					:key="t.name"
+					type="button"
+					class="trade-chip add-chip"
+					:aria-label="`Add ${t.name}`"
+					@click="addRole(t.name)"
+				>
+					<span class="dot" :style="{ background: t.dot || '#64748B' }"></span>
+					{{ t.name }}
+					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+						<path d="M12 5v14M5 12h14" />
+					</svg>
+				</button>
+			</div>
 		</div>
 		<p v-if="error" class="error">{{ error }}</p>
 		<template #footer>

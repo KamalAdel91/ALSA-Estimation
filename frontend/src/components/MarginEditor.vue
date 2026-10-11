@@ -1,17 +1,23 @@
 <script setup>
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { call } from "../api.js";
+import { amount } from "../format.js";
 
 const props = defineProps({
 	estimation: { type: String, required: true },
 	modified: { type: String, required: true },
 	value: { type: Number, default: 0 },
+	cost: { type: Number, default: 0 },
+	currency: { type: String, default: "" },
 });
 const emit = defineEmits(["saved"]);
 
 const margin = ref(props.value);
 const saving = ref(false);
 const error = ref("");
+
+// A preview only: the server works out the saved price.
+const preview = computed(() => (Number(props.cost) || 0) * (1 + (Number(margin.value) || 0) / 100));
 
 async function save() {
 	saving.value = true;
@@ -43,6 +49,9 @@ async function save() {
 				<span class="total-label">%</span>
 			</div>
 		</div>
+		<p v-if="margin !== value && cost" class="muted">
+			New price about <strong class="is-price">{{ currency }} {{ amount(preview) }}</strong>
+		</p>
 		<p v-if="error" class="error">{{ error }}</p>
 		<button v-if="margin !== value" type="button" class="btn-primary" :disabled="saving" @click="save">
 			{{ saving ? "Saving…" : "Save margin" }}
