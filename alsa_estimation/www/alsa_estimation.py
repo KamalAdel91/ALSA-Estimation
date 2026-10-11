@@ -1,4 +1,5 @@
-from urllib.parse import quote
+import os
+from urllib.parse import quote, unquote
 
 import frappe
 from frappe import _
@@ -29,7 +30,7 @@ def get_context(context):
 		"full_name": _employee_name() or get_fullname(frappe.session.user),
 		"user_image": _url(frappe.db.get_value("User", frappe.session.user, "user_image")),
 		"company": _company(),
-		"logo": _url(frappe.db.get_single_value("Navbar Settings", "app_logo") or company_logo() or app_logo()),
+		"logo": _url(_logo()),
 		"push": bool(frappe.conf.get("push_relay_server_url"))
 		and bool(
 			cint(frappe.db.get_single_value("Push Notification Settings", "enable_push_notification_relay"))
@@ -56,3 +57,26 @@ def _company():
 def _url(path):
 	"""File paths can hold spaces; encode them so the browser can load the image."""
 	return quote(path, safe="/:?=&%#") if path else None
+
+
+def _logo():
+	"""The first logo whose file is on this site; a restored database can point to files that were not copied."""
+	for url in (
+		frappe.db.get_single_value("Navbar Settings", "app_logo"),
+		company_logo(),
+		app_logo(),
+		frappe.db.get_value("Company", {"company_logo": ["is", "set"]}, "company_logo"),
+	):
+		if url and _file_exists(url):
+			return url
+	return None
+
+
+def _file_exists(url):
+	if url.startswith(("http://", "https://")):
+		return True
+	path = unquote(url.split("?")[0])
+	for prefix, folder in (("/private/files/", "private"), ("/files/", "public")):
+		if path.startswith(prefix):
+			return os.path.exists(frappe.get_site_path(folder, "files", path[len(prefix):]))
+	return True
